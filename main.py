@@ -1,19 +1,23 @@
+import re
+import unicodedata
 
 from dotenv import load_dotenv
 from langsmith import traceable
 
 load_dotenv(override=True)
 
+MAX_INPUT_LENGTH = 4000
+BLOCKED_WORD_PATTERN = re.compile(r"\b(?:hack|steal)\b")
+
 
 @traceable(name="input_guardrail")
 def input_guardrail(user_input: str) -> bool:
-    blocked_words = ["hack", "steal"]
+    if not user_input.strip() or len(user_input) > MAX_INPUT_LENGTH:
+        return False
 
-    for word in blocked_words:
-        if word in user_input.lower():
-            return False
+    normalized_input = unicodedata.normalize("NFKC", user_input).casefold()
+    return BLOCKED_WORD_PATTERN.search(normalized_input) is None
 
-    return True
 
 
 @traceable(name="chatbot")
